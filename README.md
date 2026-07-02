@@ -48,10 +48,9 @@ Output is `true` or `false`. With `--json`:
 The graph is the **simple graph over the node set induced by the edge list**:
 
 - Parallel edges are deduplicated.
-- Self-loops are dropped at parse (as a simple `nx.Graph` treats them for the
-  simple-graph degree — note NetworkX itself counts a self-loop as +2 in a
-  vertex's degree, but the edge-list contract removes self-loops before they
-  reach the graph).
+- Self-loops are kept, exactly as an `nx.Graph` keeps them: a self-loop counts
+  as one edge and adds 2 to its node's degree, and it is a length-1 odd cycle
+  (so the graph is not bipartite).
 - **Isolated (degree-0) nodes are unrepresentable** — an edge list can only
   name nodes that appear on an edge. NetworkX's special handling of isolated
   vertices (e.g. `is_eulerian`/`has_eulerian_path` returning `False` because an

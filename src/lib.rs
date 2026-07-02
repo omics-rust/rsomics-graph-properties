@@ -9,24 +9,25 @@
 //! # Graph contract
 //!
 //! Input is an undirected edge list. The graph is the *simple* graph over the
-//! **node set induced by the edge list**: parallel edges are deduplicated and
-//! self-loops are dropped, exactly as constructing an `nx.Graph` from that edge
-//! list yields for the simple-graph portion. An edge list cannot express
-//! isolated (degree-0) nodes, so those are unrepresentable here; networkx's
-//! special handling of isolated vertices (e.g. `is_eulerian` returning False)
-//! therefore never applies to a graph parsed from an edge list.
+//! **node set induced by the edge list**: parallel edges are deduplicated but
+//! self-loops are kept, exactly as constructing an `nx.Graph` from that edge
+//! list. A self-loop counts as one edge and adds 2 to its node's degree, and it
+//! is a length-1 odd cycle (so the graph is not bipartite). An edge list cannot
+//! express isolated (degree-0) nodes, so those are unrepresentable here;
+//! networkx's special handling of isolated vertices therefore never applies to
+//! a graph parsed from an edge list.
 
 use std::collections::HashMap;
 
 /// Undirected simple graph over interned integer node ids `0..n`.
 ///
-/// Adjacency is `Vec<Vec<usize>>` and degree is `adj[v].len()` (self-loops were
-/// dropped at parse, so degree here is the simple-graph degree — this differs
-/// from networkx counting a self-loop as +2, but the edge-list contract drops
-/// self-loops before they reach the graph).
+/// `adj[v]` holds neighbours excluding self; `self_loop[v]` records whether the
+/// node carries a self-loop. Degree is `adj[v].len() + 2` when it does, matching
+/// networkx.
 pub struct Graph {
     idx_to_node: Vec<String>,
     adj: Vec<Vec<usize>>,
+    self_loop: Vec<bool>,
 }
 
 impl Graph {
@@ -38,6 +39,7 @@ impl Graph {
         table.insert(name.to_owned(), idx);
         self.idx_to_node.push(name.to_owned());
         self.adj.push(Vec::new());
+        self.self_loop.push(false);
         idx
     }
 
@@ -49,21 +51,25 @@ impl Graph {
     #[must_use]
     pub fn number_of_edges(&self) -> usize {
         self.adj.iter().map(Vec::len).sum::<usize>() / 2
+            + self.self_loop.iter().filter(|&&s| s).count()
     }
 
     fn degrees(&self) -> Vec<usize> {
-        self.adj.iter().map(Vec::len).collect()
+        (0..self.number_of_nodes())
+            .map(|v| self.adj[v].len() + if self.self_loop[v] { 2 } else { 0 })
+            .collect()
     }
 }
 
 /// Parse a whitespace-delimited `u v` edge list. `#` comments and blank lines
-/// are skipped. Parallel edges are deduplicated and self-loops dropped, giving
-/// the undirected simple graph over the edge-list node set.
+/// are skipped. Parallel edges are deduplicated; self-loops are kept, giving the
+/// undirected simple graph (with self-loops) over the edge-list node set.
 #[must_use]
 pub fn parse_edge_list(input: &str) -> Graph {
     let mut g = Graph {
         idx_to_node: Vec::new(),
         adj: Vec::new(),
+        self_loop: Vec::new(),
     };
     let mut table = HashMap::new();
 
@@ -79,6 +85,7 @@ pub fn parse_edge_list(input: &str) -> Graph {
         let ui = g.intern(u, &mut table);
         let vi = g.intern(v, &mut table);
         if ui == vi {
+            g.self_loop[ui] = true;
             continue;
         }
         if !g.adj[ui].contains(&vi) {
@@ -161,6 +168,9 @@ fn is_connected(g: &Graph) -> bool {
 /// `nx.is_bipartite`: 2-colorable via BFS coloring. False on any odd cycle.
 #[must_use]
 pub fn is_bipartite(g: &Graph) -> bool {
+    if g.self_loop.iter().any(|&s| s) {
+        return false;
+    }
     let n = g.number_of_nodes();
     let mut color = vec![-1i8; n];
     let mut queue = std::collections::VecDeque::new();

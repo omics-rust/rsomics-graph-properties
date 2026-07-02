@@ -81,6 +81,21 @@ const CASES: &[Case] = &[
         edges: include_str!("golden/gnm_60_90_s7.txt"),
         expected: [false, false, false, false, false, false],
     },
+    Case {
+        name: "selfloop_only",
+        edges: include_str!("golden/selfloop_only.txt"),
+        expected: [false, true, true, false, false, true],
+    },
+    Case {
+        name: "selfloop_edge",
+        edges: include_str!("golden/selfloop_edge.txt"),
+        expected: [false, false, true, false, false, false],
+    },
+    Case {
+        name: "triangle_selfloop",
+        edges: include_str!("golden/triangle_selfloop.txt"),
+        expected: [false, true, true, false, false, false],
+    },
 ];
 
 #[test]

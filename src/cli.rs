@@ -48,8 +48,8 @@ struct Outcome {
 /// matching `networkx` boolean invariants.
 ///
 /// Reads an edge list (`u v` per line; `#` comments and blank lines skipped;
-/// string node names; parallel edges deduplicated and self-loops dropped as in
-/// a simple `nx.Graph`). Prints `true` or `false`.
+/// string node names; parallel edges deduplicated and self-loops kept as in an
+/// `nx.Graph`). Prints `true` or `false`.
 #[derive(Parser, Debug)]
 #[command(name = "rsomics-graph-properties", version, about, long_about = None)]
 pub struct Cli {
