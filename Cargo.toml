@@ -1,6 +1,6 @@
 [package]
 name = "rsomics-graph-properties"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Undirected graph-property predicates (bipartite / eulerian / tree / forest / regular) — value-exact port of networkx boolean graph invariants"
 license = "MIT OR Apache-2.0"

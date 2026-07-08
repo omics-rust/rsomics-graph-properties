@@ -74,8 +74,9 @@ pub fn parse_edge_list(input: &str) -> Graph {
     let mut table = HashMap::new();
 
     for line in input.lines() {
-        let line = line.trim();
-        if line.is_empty() || line.starts_with('#') {
+        // nx.parse_edgelist strips a '#' comment anywhere in the line before tokenising.
+        let line = line.split('#').next().unwrap_or("").trim();
+        if line.is_empty() {
             continue;
         }
         let mut parts = line.split_whitespace();
@@ -237,5 +238,31 @@ pub fn is_regular(g: &Graph) -> bool {
     match degrees.first() {
         Some(&d0) => degrees.iter().all(|&d| d == d0),
         None => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn fingerprint(g: &Graph) -> (usize, usize, bool, bool, bool, bool, bool) {
+        (
+            g.number_of_nodes(),
+            g.number_of_edges(),
+            is_bipartite(g),
+            is_eulerian(g),
+            has_eulerian_path(g),
+            is_tree(g),
+            is_regular(g),
+        )
+    }
+
+    #[test]
+    fn inline_hash_comment_matches_comment_free_graph() {
+        let with_comments = parse_edge_list("0 1\n1 2#c\n2 3\n0 #x\n");
+        let clean = parse_edge_list("0 1\n1 2\n2 3\n");
+        assert_eq!(fingerprint(&with_comments), fingerprint(&clean));
+        assert_eq!(with_comments.number_of_nodes(), 4);
+        assert_eq!(with_comments.number_of_edges(), 3);
     }
 }
